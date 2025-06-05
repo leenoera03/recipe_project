@@ -129,18 +129,12 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               child: Center(
                                 child: Image.asset(
-                                  'assets/logo.png', // Ganti dengan path asset Anda
-                                  width: 70,
-                                  height: 70,
-                                  // Jika asset belum ada, uncomment Icon di bawah
+                                  'assets/logo.png',
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.restaurant_menu,
-                                      size: 70,
-                                      color: Colors.white,
-                                    );
+                                    return Icon(Icons.error); // Fallback
                                   },
-                                ),
+                                )
+
                               ),
                             ),
                             SizedBox(height: 24),
