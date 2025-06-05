@@ -136,7 +136,7 @@ class RecipeDetailPage extends StatelessWidget {
                     children: [
                       Chip(
                         label: Text(recipe.cuisine),
-                        backgroundColor: Colors.blue.shade100,
+                        backgroundColor: Colors.blue.shade50,
                         avatar: Icon(Icons.public, size: 18),
                       ),
                       SizedBox(width: 8),

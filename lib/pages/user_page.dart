@@ -19,6 +19,12 @@ class _UserPageState extends State<UserPage> {
   String? username;
   TextEditingController searchController = TextEditingController();
 
+  // Define custom colors (avoiding #E50046)
+  static const Color primaryGreen = Color(0xFFC7DB9C); // Soft green from your palette
+  static const Color accentYellow = Color(0xFFFFF0BD); // Soft yellow from your palette
+  static const Color lightCoral = Color(0xFFFDAB9E); // Light coral from your palette
+  static const Color darkGreen = Color(0xFF7BA05B); // Darker shade of green
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +65,7 @@ class _UserPageState extends State<UserPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading recipes: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: lightCoral, // Using coral instead of red
           ),
         );
       }
@@ -96,8 +102,9 @@ class _UserPageState extends State<UserPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daftar Resep'),
-        backgroundColor: Colors.green,
+        backgroundColor: darkGreen, // Using darker green
         foregroundColor: Colors.white,
+        elevation: 2,
         actions: [
           PopupMenuButton<String>(
             onSelected: (String result) {
@@ -110,7 +117,7 @@ class _UserPageState extends State<UserPage> {
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, color: Colors.red),
+                    Icon(Icons.logout, color: lightCoral), // Using coral instead of red
                     SizedBox(width: 8),
                     Text('Logout'),
                   ],
@@ -124,18 +131,37 @@ class _UserPageState extends State<UserPage> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.green.shade50,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  primaryGreen.withOpacity(0.3),
+                  accentYellow.withOpacity(0.2),
+                ],
+              ),
+            ),
             child: Column(
               children: [
                 Row(
                   children: [
-                    Icon(Icons.person, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text(
-                      'Selamat datang, ${username ?? 'User'}!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: darkGreen,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(Icons.person, color: Colors.white, size: 20),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Selamat datang, ${username ?? 'User'}!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: darkGreen,
+                        ),
                       ),
                     ),
                   ],
@@ -144,13 +170,20 @@ class _UserPageState extends State<UserPage> {
                 TextField(
                   controller: searchController,
                   decoration: InputDecoration(
-                    hintText: 'Cari resep...',
-                    prefixIcon: Icon(Icons.search),
+                    hintText: 'Cari resep berdasarkan nama, masakan, atau tag...',
+                    hintStyle: TextStyle(color: Colors.grey.shade600),
+                    prefixIcon: Icon(Icons.search, color: darkGreen),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: primaryGreen),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: darkGreen, width: 2),
                     ),
                     filled: true,
                     fillColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   onChanged: _filterRecipes,
                 ),
@@ -159,29 +192,65 @@ class _UserPageState extends State<UserPage> {
           ),
           Expanded(
             child: isLoading
-                ? Center(child: CircularProgressIndicator())
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: darkGreen,
+                    strokeWidth: 3,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Memuat resep...',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            )
                 : filteredRecipes.isEmpty
                 ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.search_off,
-                    size: 64,
-                    color: Colors.grey,
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: primaryGreen.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: Icon(
+                      Icons.search_off,
+                      size: 64,
+                      color: darkGreen,
+                    ),
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 24),
                   Text(
                     'Tidak ada resep ditemukan',
                     style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: darkGreen,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Coba kata kunci yang berbeda',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
             )
                 : RefreshIndicator(
+              color: darkGreen,
+              backgroundColor: accentYellow,
               onRefresh: () async {
                 await _loadRecipes();
               },
@@ -189,7 +258,7 @@ class _UserPageState extends State<UserPage> {
                 padding: EdgeInsets.all(16),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.8,
+                  childAspectRatio: 0.75,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
@@ -206,100 +275,167 @@ class _UserPageState extends State<UserPage> {
                       );
                     },
                     child: Card(
-                      elevation: 4,
+                      elevation: 6,
+                      shadowColor: primaryGreen.withOpacity(0.3),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(12),
-                              ),
-                              child: Image.network(
-                                recipe.image,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: Colors.grey.shade300,
-                                    child: Icon(
-                                      Icons.restaurant,
-                                      size: 50,
-                                      color: Colors.grey,
-                                    ),
-                                  );
-                                },
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    color: Colors.grey.shade300,
-                                    child: Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white,
+                              accentYellow.withOpacity(0.1),
+                            ],
                           ),
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Stack(
                                 children: [
-                                  Text(
-                                    recipe.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(16),
                                     ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    recipe.cuisine,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
+                                    child: Image.network(
+                                      recipe.image,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                primaryGreen.withOpacity(0.3),
+                                                accentYellow.withOpacity(0.3),
+                                              ],
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.restaurant,
+                                            size: 50,
+                                            color: darkGreen,
+                                          ),
+                                        );
+                                      },
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                primaryGreen.withOpacity(0.2),
+                                                accentYellow.withOpacity(0.2),
+                                              ],
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              color: darkGreen,
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
-                                  const Spacer(),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.star,
-                                        color: Colors.orange,
-                                        size: 16,
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: darkGreen,
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${recipe.rating.toStringAsFixed(1)}',
-                                        style: const TextStyle(fontSize: 12),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.star,
+                                            color: accentYellow,
+                                            size: 14,
+                                          ),
+                                          SizedBox(width: 2),
+                                          Text(
+                                            '${recipe.rating.toStringAsFixed(1)}',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const Spacer(),
-                                      const Icon(
-                                        Icons.access_time,
-                                        color: Colors.grey,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${recipe.prepTimeMinutes + recipe.cookTimeMinutes}m',
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                        ],
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      recipe.name,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: darkGreen,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    SizedBox(height: 4),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: primaryGreen.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        recipe.cuisine,
+                                        style: TextStyle(
+                                          color: darkGreen,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    Spacer(),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.access_time,
+                                          color: Colors.grey.shade600,
+                                          size: 16,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          '${recipe.prepTimeMinutes + recipe.cookTimeMinutes} menit',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );

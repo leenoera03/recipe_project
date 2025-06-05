@@ -108,7 +108,7 @@ class RecipeService {
     }
   }
 
-  // Delete recipe
+  // Delete recipe - FIXED VERSION
   static Future<bool> deleteRecipe(int id) async {
     try {
       final response = await http.delete(
@@ -116,7 +116,8 @@ class RecipeService {
         headers: headers,
       );
 
-      if (response.statusCode == 204) {
+      // Supabase bisa mengembalikan 200 atau 204 untuk delete yang berhasil
+      if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       } else {
         throw Exception('Failed to delete recipe: ${response.statusCode}');
