@@ -6,8 +6,10 @@ import 'login_page.dart';
 import 'recipe_detail_page.dart';
 
 class UserPage extends StatefulWidget {
+  const UserPage({Key? key}) : super(key: key);
+
   @override
-  _UserPageState createState() => _UserPageState();
+  State<UserPage> createState() => _UserPageState();
 }
 
 class _UserPageState extends State<UserPage> {
@@ -43,9 +45,9 @@ class _UserPageState extends State<UserPage> {
         isLoading = true;
       });
 
-      Recipe recipeData = await RecipeService.getAllRecipes();
+      List<Recipes> recipeList = await RecipeService.getAllRecipes();
       setState(() {
-        recipes = recipeData.recipes;
+        recipes = recipeList;
         filteredRecipes = recipes;
         isLoading = false;
       });
@@ -53,12 +55,14 @@ class _UserPageState extends State<UserPage> {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading recipes: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading recipes: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -79,17 +83,21 @@ class _UserPageState extends State<UserPage> {
   _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Daftar Resep'),
+        title: const Text('Daftar Resep'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
         actions: [
           PopupMenuButton<String>(
             onSelected: (String result) {
@@ -115,7 +123,7 @@ class _UserPageState extends State<UserPage> {
       body: Column(
         children: [
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             color: Colors.green.shade50,
             child: Column(
               children: [
@@ -225,26 +233,35 @@ class _UserPageState extends State<UserPage> {
                                     ),
                                   );
                                 },
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    color: Colors.grey.shade300,
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
                           Expanded(
                             flex: 2,
                             child: Padding(
-                              padding: EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(8),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     recipe.name,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  SizedBox(height: 4),
+                                  const SizedBox(height: 4),
                                   Text(
                                     recipe.cuisine,
                                     style: TextStyle(
@@ -252,29 +269,29 @@ class _UserPageState extends State<UserPage> {
                                       fontSize: 12,
                                     ),
                                   ),
-                                  Spacer(),
+                                  const Spacer(),
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.star,
                                         color: Colors.orange,
                                         size: 16,
                                       ),
-                                      SizedBox(width: 4),
+                                      const SizedBox(width: 4),
                                       Text(
-                                        '${recipe.rating}',
-                                        style: TextStyle(fontSize: 12),
+                                        '${recipe.rating.toStringAsFixed(1)}',
+                                        style: const TextStyle(fontSize: 12),
                                       ),
-                                      Spacer(),
-                                      Icon(
+                                      const Spacer(),
+                                      const Icon(
                                         Icons.access_time,
                                         color: Colors.grey,
                                         size: 16,
                                       ),
-                                      SizedBox(width: 4),
+                                      const SizedBox(width: 4),
                                       Text(
                                         '${recipe.prepTimeMinutes + recipe.cookTimeMinutes}m',
-                                        style: TextStyle(fontSize: 12),
+                                        style: const TextStyle(fontSize: 12),
                                       ),
                                     ],
                                   ),

@@ -104,7 +104,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
             .toList();
 
         final recipe = Recipes(
-          id: widget.recipe?.id ?? 0,
+          id: widget.recipe?.id ?? 0, // Supabase akan auto-generate ID untuk create
           name: _nameController.text.trim(),
           ingredients: ingredients,
           instructions: instructions,
@@ -115,39 +115,47 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
           cuisine: _cuisineController.text.trim(),
           caloriesPerServing: int.parse(_caloriesController.text),
           tags: tags,
-          userId: widget.recipe?.userId ?? 1,
+          userId: widget.recipe?.userId ?? 1, // Default user ID
           image: _imageController.text.trim(),
-          rating: widget.recipe?.rating ?? 4.0,
+          rating: widget.recipe?.rating ?? 4.0, // Default rating
           reviewCount: widget.recipe?.reviewCount ?? 0,
           mealType: mealType,
         );
 
         if (widget.recipe == null) {
           // Add new recipe
-          await RecipeService.addRecipe(recipe);
+          Recipes newRecipe = await RecipeService.addRecipe(recipe);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Resep berhasil ditambahkan!'),
+              content: Text('Resep "${newRecipe.name}" berhasil ditambahkan!'),
               backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: 'LIHAT',
+                textColor: Colors.white,
+                onPressed: () {
+                  // Optional: Navigate to detail page
+                },
+              ),
             ),
           );
         } else {
           // Update existing recipe
-          await RecipeService.updateRecipe(widget.recipe!.id, recipe);
+          Recipes updatedRecipe = await RecipeService.updateRecipe(widget.recipe!.id, recipe);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Resep berhasil diupdate!'),
+              content: Text('Resep "${updatedRecipe.name}" berhasil diupdate!'),
               backgroundColor: Colors.green,
             ),
           );
         }
 
-        Navigator.pop(context);
+        Navigator.pop(context, true); // Return true to indicate success
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
           ),
         );
       }
@@ -158,11 +166,23 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
     }
   }
 
+  // Validate URL helper
+  bool _isValidUrl(String url) {
+    try {
+      Uri.parse(url);
+      return url.startsWith('http://') || url.startsWith('https://');
+    } catch (e) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.recipe == null ? 'Tambah Resep' : 'Edit Resep'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
         actions: [
           if (_isLoading)
             Center(
@@ -171,7 +191,10 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(color: Colors.white),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
                 ),
               ),
             )
@@ -180,7 +203,10 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
               onPressed: _saveRecipe,
               child: Text(
                 'SIMPAN',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
         ],
@@ -203,6 +229,9 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                 if (value == null || value.isEmpty) {
                   return 'Nama resep harus diisi';
                 }
+                if (value.length < 3) {
+                  return 'Nama resep minimal 3 karakter';
+                }
                 return null;
               },
             ),
@@ -214,6 +243,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                 labelText: 'Jenis Masakan *',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.public),
+                hintText: 'Contoh: Indonesian, Italian, Chinese',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -230,15 +260,54 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                 labelText: 'URL Gambar *',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.image),
+                hintText: 'https://example.com/image.jpg',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'URL gambar harus diisi';
                 }
+                if (!_isValidUrl(value)) {
+                  return 'URL tidak valid (harus dimulai dengan http:// atau https://)';
+                }
                 return null;
               },
             ),
             SizedBox(height: 16),
+
+            // Image Preview
+            if (_imageController.text.isNotEmpty && _isValidUrl(_imageController.text))
+              Container(
+                margin: EdgeInsets.only(bottom: 16),
+                height: 150,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    _imageController.text,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 150,
+                        color: Colors.grey.shade200,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.broken_image, color: Colors.grey),
+                              Text('Gambar tidak dapat dimuat', style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
 
             // Difficulty Dropdown
             DropdownButtonFormField<String>(
@@ -270,7 +339,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                   child: TextFormField(
                     controller: _prepTimeController,
                     decoration: InputDecoration(
-                      labelText: 'Waktu Persiapan (menit) *',
+                      labelText: 'Persiapan (menit) *',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.timer),
                     ),
@@ -279,8 +348,9 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                       if (value == null || value.isEmpty) {
                         return 'Harus diisi';
                       }
-                      if (int.tryParse(value) == null) {
-                        return 'Harus angka';
+                      final int? num = int.tryParse(value);
+                      if (num == null || num <= 0) {
+                        return 'Harus angka > 0';
                       }
                       return null;
                     },
@@ -291,7 +361,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                   child: TextFormField(
                     controller: _cookTimeController,
                     decoration: InputDecoration(
-                      labelText: 'Waktu Memasak (menit) *',
+                      labelText: 'Memasak (menit) *',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.access_time),
                     ),
@@ -300,8 +370,9 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                       if (value == null || value.isEmpty) {
                         return 'Harus diisi';
                       }
-                      if (int.tryParse(value) == null) {
-                        return 'Harus angka';
+                      final int? num = int.tryParse(value);
+                      if (num == null || num <= 0) {
+                        return 'Harus angka > 0';
                       }
                       return null;
                     },
@@ -326,8 +397,9 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                       if (value == null || value.isEmpty) {
                         return 'Harus diisi';
                       }
-                      if (int.tryParse(value) == null) {
-                        return 'Harus angka';
+                      final int? num = int.tryParse(value);
+                      if (num == null || num <= 0) {
+                        return 'Harus angka > 0';
                       }
                       return null;
                     },
@@ -347,8 +419,9 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                       if (value == null || value.isEmpty) {
                         return 'Harus diisi';
                       }
-                      if (int.tryParse(value) == null) {
-                        return 'Harus angka';
+                      final int? num = int.tryParse(value);
+                      if (num == null || num <= 0) {
+                        return 'Harus angka > 0';
                       }
                       return null;
                     },
@@ -373,6 +446,13 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                 if (value == null || value.isEmpty) {
                   return 'Bahan-bahan harus diisi';
                 }
+                final ingredients = value.split('\n')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList();
+                if (ingredients.length < 2) {
+                  return 'Minimal 2 bahan diperlukan';
+                }
                 return null;
               },
             ),
@@ -392,6 +472,13 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Instruksi harus diisi';
+                }
+                final instructions = value.split('\n')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList();
+                if (instructions.length < 2) {
+                  return 'Minimal 2 langkah diperlukan';
                 }
                 return null;
               },
@@ -426,13 +513,32 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
             ElevatedButton(
               onPressed: _isLoading ? null : _saveRecipe,
               style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: _isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
+                  ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Menyimpan...'),
+                ],
+              )
                   : Text(
                 widget.recipe == null ? 'TAMBAH RESEP' : 'UPDATE RESEP',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
             SizedBox(height: 16),

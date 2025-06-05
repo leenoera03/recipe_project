@@ -36,9 +36,10 @@ class _AdminPageState extends State<AdminPage> {
         isLoading = true;
       });
 
-      Recipe recipeData = await RecipeService.getAllRecipes();
+      // Perubahan: getAllRecipes sekarang mengembalikan List<Recipes> langsung
+      List<Recipes> recipeList = await RecipeService.getAllRecipes();
       setState(() {
-        recipes = recipeData.recipes;
+        recipes = recipeList;
         isLoading = false;
       });
     } catch (e) {
@@ -77,6 +78,9 @@ class _AdminPageState extends State<AdminPage> {
             ),
             TextButton(
               child: Text('Hapus'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
               onPressed: () => Navigator.of(context).pop(true),
             ),
           ],
@@ -86,15 +90,42 @@ class _AdminPageState extends State<AdminPage> {
 
     if (confirm == true) {
       try {
-        await RecipeService.deleteRecipe(id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Resep berhasil dihapus'),
-            backgroundColor: Colors.green,
-          ),
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
         );
-        _loadRecipes(); // Reload data
+
+        bool success = await RecipeService.deleteRecipe(id);
+
+        // Close loading indicator
+        Navigator.of(context).pop();
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Resep berhasil dihapus'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _loadRecipes(); // Reload data
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal menghapus resep'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } catch (e) {
+        // Close loading indicator if still open
+        Navigator.of(context).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
@@ -110,6 +141,8 @@ class _AdminPageState extends State<AdminPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Admin Panel'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
         actions: [
           PopupMenuButton<String>(
             onSelected: (String result) {
@@ -135,6 +168,7 @@ class _AdminPageState extends State<AdminPage> {
       body: Column(
         children: [
           Container(
+            width: double.infinity,
             padding: EdgeInsets.all(16),
             color: Colors.blue.shade50,
             child: Row(
@@ -148,22 +182,61 @@ class _AdminPageState extends State<AdminPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Spacer(),
+                Text(
+                  'Total: ${recipes.length} resep',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
               ],
             ),
           ),
           Expanded(
             child: isLoading
                 ? Center(child: CircularProgressIndicator())
+                : recipes.isEmpty
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.restaurant_menu,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Belum ada resep',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tap tombol + untuk menambah resep baru',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
+            )
                 : RefreshIndicator(
               onRefresh: () async {
                 await _loadRecipes();
               },
               child: ListView.builder(
+                padding: EdgeInsets.all(8),
                 itemCount: recipes.length,
                 itemBuilder: (context, index) {
                   final recipe = recipes[index];
                   return Card(
-                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    elevation: 2,
                     child: ListTile(
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -176,21 +249,37 @@ class _AdminPageState extends State<AdminPage> {
                             return Container(
                               width: 60,
                               height: 60,
-                              color: Colors.grey.shade300,
-                              child: Icon(Icons.restaurant),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.restaurant,
+                                color: Colors.grey.shade600,
+                              ),
                             );
                           },
                         ),
                       ),
                       title: Text(
                         recipe.name,
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          SizedBox(height: 4),
                           Text('Cuisine: ${recipe.cuisine}'),
-                          Text('Rating: ${recipe.rating}/5'),
+                          Row(
+                            children: [
+                              Icon(Icons.star, color: Colors.amber, size: 16),
+                              SizedBox(width: 4),
+                              Text('${recipe.rating}/5'),
+                            ],
+                          ),
                         ],
                       ),
                       trailing: PopupMenuButton<String>(
@@ -263,6 +352,7 @@ class _AdminPageState extends State<AdminPage> {
         },
         child: Icon(Icons.add),
         tooltip: 'Tambah Resep',
+        backgroundColor: Colors.blue,
       ),
     );
   }
